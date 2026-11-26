@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meeting Notes Extractor</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2ff;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px #ccd0e0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #3730a3;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        select, button {
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        select {
+            width: 100%;
+        }
+
+        button {
+            width: 100%;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3730a3;
+        }
+
+        .result {
+            margin-top: 25px;
+            background: #f5f5ff;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .action {
+            background: white;
+            padding: 15px;
+            margin: 12px 0;
+            border-left: 5px solid #4f46e5;
+            border-radius: 6px;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>AI Meeting Notes Extractor</h1>
+
+    <p>
+        Convert your meeting notes into organized action items
+        using Artificial Intelligence.
+    </p>
+
+    <form id="extractForm">
+
+        <h3>Enter Meeting Notes</h3>
+
+        <textarea id="notes"
+        placeholder="Paste your meeting notes here..."
+        required></textarea>
+
+        <h3>Select Extraction Mode</h3>
+
+        <select id="mode">
+            <option value="offline">Offline Mode</option>
+            <option value="gemini">Gemini AI Mode</option>
+        </select>
+
+        <button type="submit">Extract Action Items</button>
+
+    </form>
+
+    <div id="output"></div>
+
+</div>
+
+<script>
+    const form = document.getElementById("extractForm");
+    const output = document.getElementById("output");
+
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const notes = document.getElementById("notes").value;
+        const mode = document.getElementById("mode").value;
+
+        output.innerHTML = "<p>Processing...</p>";
+
+        try {
+            const response = await fetch("/extract", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ notes, mode })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Extraction failed");
+            }
+
+            output.innerHTML = `
+                <div class="result">
+                    <h2>Extracted Action Items</h2>
+                    ${data.actions.map((item, index) => `
+                        <div class="action">
+                            <h3>Action ${index + 1}</h3>
+                            <p><b>Owner:</b> ${escapeHTML(item.owner)}</p>
+                            <p><b>Task:</b> ${escapeHTML(item.task)}</p>
+                            <p><b>Deadline:</b> ${escapeHTML(item.deadline)}</p>
+                        </div>
+                    `).join("") || "<p>No action items found.</p>"}
+                </div>
+            `;
+
+        } catch (error) {
+            output.innerHTML =
+                `<p class="error">${escapeHTML(error.message)}</p>`;
+        }
+    });
+
+    function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[char]);
+    }
+</script>
+
+</body>
+</html>
